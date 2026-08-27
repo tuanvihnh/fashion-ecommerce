@@ -79,6 +79,7 @@ async def update_category(
     try:
         await db.commit()
         await db.refresh(category)
+        await FastAPICache.clear(namespace="categories")
         return category
     except exc.IntegrityError:
         await db.rollback()
@@ -104,3 +105,4 @@ async def delete_category(
         
     await db.delete(category)
     await db.commit()
+    await FastAPICache.clear(namespace="categories")

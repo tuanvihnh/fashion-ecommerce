@@ -68,16 +68,6 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # --- Mount Static Files ---
 app.mount("/static", StaticFiles(directory="uploads"), name="static")
 
-# --- Cache Middleware ---
-@app.middleware("http")
-async def add_no_cache_header(request, call_next):
-    response = await call_next(request)
-    # Ghi đè Cache-Control do fastapi-cache tạo ra để trình duyệt không bao giờ cache GET request
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    return response
-
 # --- CORS Middleware ---
 app.add_middleware(
     CORSMiddleware,

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
+import { AlertCircle } from 'lucide-react'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 import { useAuth } from '../context/AuthContext'
@@ -10,6 +11,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -19,9 +21,10 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setErrorMessage('')
 
     if (!email.trim() || !password.trim()) {
-      toast.error('Vui lòng nhập đầy đủ email và mật khẩu')
+      setErrorMessage('Vui lòng nhập đầy đủ email và mật khẩu')
       return
     }
 
@@ -36,7 +39,7 @@ const LoginPage = () => {
         error.response?.data?.detail ||
         error.response?.data?.message ||
         'Đăng nhập thất bại. Vui lòng kiểm tra lại email hoặc mật khẩu.'
-      toast.error(errorMsg)
+      setErrorMessage(errorMsg)
     } finally {
       setIsSubmitting(false)
     }
@@ -61,6 +64,16 @@ const LoginPage = () => {
             </p>
           </div>
 
+          {/* Inline Error Message */}
+          {errorMessage && (
+            <div className="flex items-start gap-3 p-4 bg-rose-50 border border-rose-200 text-rose-700 animate-fadeIn">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">{errorMessage}</p>
+              </div>
+            </div>
+          )}
+
           {/* Form */}
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             <div>
@@ -77,9 +90,9 @@ const LoginPage = () => {
                 autoComplete="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setErrorMessage('') }}
                 placeholder="name@example.com"
-                className="input-field text-sm"
+                className={`input-field text-sm ${errorMessage ? 'border-rose-300 focus:border-rose-500' : ''}`}
               />
             </div>
 
@@ -91,6 +104,12 @@ const LoginPage = () => {
                 >
                   Mật khẩu
                 </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-brand-600 hover:text-brand-700 font-medium transition-colors"
+                >
+                  Quên mật khẩu?
+                </Link>
               </div>
               <input
                 id="password"
@@ -99,9 +118,9 @@ const LoginPage = () => {
                 autoComplete="current-password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setErrorMessage('') }}
                 placeholder="••••••••"
-                className="input-field text-sm"
+                className={`input-field text-sm ${errorMessage ? 'border-rose-300 focus:border-rose-500' : ''}`}
               />
             </div>
 

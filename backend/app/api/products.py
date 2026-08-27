@@ -165,9 +165,16 @@ async def update_product(
     try:
         from sqlalchemy import exc
         await db.commit()
-        await db.refresh(product)
+        # Re-fetch với eager loading để tránh MissingGreenlet
+        stmt_refetch = select(Product).options(
+            selectinload(Product.variants),
+            joinedload(Product.category)
+        ).where(Product.id == product_id)
+        result_refetch = await db.execute(stmt_refetch)
+        updated_product = result_refetch.scalar_one()
         await FastAPICache.clear(namespace="products")
-        return product
+        await ws_manager.broadcast({"type": "PRODUCT_UPDATED"}, group="admin")
+        return updated_product
     except exc.IntegrityError:
         await db.rollback()
         raise HTTPException(
@@ -194,6 +201,7 @@ async def delete_product(
     db.add(product)
     await db.commit()
     await FastAPICache.clear(namespace="products")
+    await ws_manager.broadcast({"type": "PRODUCT_DELETED"}, group="admin")
     return None
 
 @router.post("/{product_id}/variants", response_model=ProductVariantRead, status_code=status.HTTP_201_CREATED)

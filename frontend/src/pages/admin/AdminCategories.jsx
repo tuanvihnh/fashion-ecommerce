@@ -110,12 +110,14 @@ const AdminCategories = () => {
     setSubmitting(true)
     const toastId = toast.loading('Đang thêm danh mục...')
     try {
-      await categoryApi.create(payload)
+      const res = await categoryApi.create(payload)
+      const newCategory = res.data || res
       toast.success('Thêm danh mục thành công!', { id: toastId })
+      // Chèn danh mục mới vào đầu mảng ngay lập tức
+      setCategories((prev) => [newCategory, ...prev])
       setFormData(initialCategoryState)
       setAutoSlug(true)
       setShowAddForm(false)
-      fetchCategories()
     } catch (error) {
       console.error('Lỗi khi thêm danh mục:', error)
       toast.error(
@@ -158,10 +160,14 @@ const AdminCategories = () => {
 
     const toastId = toast.loading('Đang lưu thay đổi...')
     try {
-      await categoryApi.update(categoryId, payload)
+      const res = await categoryApi.update(categoryId, payload)
+      const updatedCategory = res.data || res
       toast.success('Cập nhật danh mục thành công!', { id: toastId })
+      // Cập nhật trực tiếp danh mục trong mảng
+      setCategories((prev) =>
+        prev.map((c) => (c.id === categoryId ? { ...c, ...updatedCategory } : c))
+      )
       setEditingId(null)
-      fetchCategories()
     } catch (error) {
       console.error('Lỗi khi cập nhật danh mục:', error)
       toast.error(
@@ -180,8 +186,9 @@ const AdminCategories = () => {
     try {
       await categoryApi.remove(deleteTarget.id)
       toast.success(`Đã xóa danh mục "${deleteTarget.name}"`, { id: toastId })
+      // Loại bỏ danh mục khỏi mảng ngay lập tức
+      setCategories((prev) => prev.filter((c) => c.id !== deleteTarget.id))
       setDeleteTarget(null)
-      fetchCategories()
     } catch (error) {
       console.error('Lỗi khi xóa danh mục:', error)
       toast.error(

@@ -11,6 +11,9 @@ import {
   Check,
   AlertCircle,
   Filter,
+  Edit2,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import AdminSidebar from '../../components/layout/AdminSidebar'
@@ -38,7 +41,14 @@ const AdminProducts = () => {
   const [showAddForm, setShowAddForm] = useState(false)
   const [autoSlug, setAutoSlug] = useState(true)
   const fileInputRef = useRef(null)
-  const formContainerRef = useRef(null)
+  const saveBtnRef = useRef(null)
+
+  // Edit State
+  const [editingProduct, setEditingProduct] = useState(null) // product object being edited
+
+  // Delete State
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   const initialFormState = {
     title: '',
@@ -117,7 +127,7 @@ const AdminProducts = () => {
   const handleSearchSubmit = (e) => {
     e.preventDefault()
     setPage(1)
-    fetchProducts()
+    fetchProducts(1)
   }
 
   // Handle title input and auto slug
@@ -151,13 +161,11 @@ const AdminProducts = () => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Kiểm tra định dạng
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/jpg'].includes(file.type)) {
       toast.error('Vui lòng chọn ảnh định dạng JPEG, PNG hoặc WebP')
       return
     }
 
-    // Kiểm tra dung lượng (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Kích thước ảnh không được vượt quá 5MB')
       return
@@ -187,7 +195,7 @@ const AdminProducts = () => {
     }
   }
 
-  // Handle form submit (Create product)
+  // ==================== CREATE ====================
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -215,26 +223,127 @@ const AdminProducts = () => {
     setSubmitting(true)
     const toastId = toast.loading('Đang tạo sản phẩm...')
     try {
-      await productApi.create(payload)
+      const res = await productApi.create(payload)
+      const newProduct = res.data || res
       toast.success('Thêm sản phẩm mới thành công!', { id: toastId })
+      // Chèn sản phẩm mới lên ĐẦU danh sách ngay lập tức
+      setProducts((prev) => [newProduct, ...prev])
+      setTotal((prev) => prev + 1)
       setFormData(initialFormState)
       setAutoSlug(true)
       setShowAddForm(false)
       setPage(1)
-      // Chờ một chút để setPage(1) có hiệu lực trước khi fetchProducts (mặc dù fetchProducts dùng biến page hiện tại từ tham số, ta nên để useEffect tự trigger fetchProducts khi page thay đổi nếu được, nhưng ở đây fetchProducts dùng state cũ, ta cần truyền thẳng hoặc update fetchProducts)
-      fetchProducts(1)
     } catch (error) {
       console.error('Lỗi khi tạo sản phẩm:', error)
       const detail = error.response?.data?.detail
       let errorMsg = 'Không thể tạo sản phẩm'
-      if (typeof detail === 'string') {
-        errorMsg = detail
-      } else if (Array.isArray(detail)) {
-        errorMsg = detail.map((d) => d.msg).join(', ')
-      }
+      if (typeof detail === 'string') errorMsg = detail
+      else if (Array.isArray(detail)) errorMsg = detail.map((d) => d.msg).join(', ')
       toast.error(errorMsg, { id: toastId })
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  // ==================== EDIT ====================
+  const startEditing = (product) => {
+    setEditingProduct(product)
+    setFormData({
+      title: product.title || '',
+      slug: product.slug || '',
+      description: product.description || '',
+      base_price: product.base_price || '',
+      brand: product.brand || '',
+      material: product.material || '',
+      gender: product.gender?.toLowerCase() || 'unisex',
+      category_id: product.category_id || '',
+      image_url: product.image_url || '',
+    })
+    setAutoSlug(false)
+    setShowAddForm(true)
+    setTimeout(() => {
+      saveBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 150)
+  }
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault()
+
+    if (!formData.title.trim()) {
+      toast.error('Vui lòng nhập tên sản phẩm')
+      return
+    }
+    if (!formData.base_price || Number(formData.base_price) <= 0) {
+      toast.error('Vui lòng nhập giá sản phẩm hợp lệ (> 0)')
+      return
+    }
+
+    const payload = {
+      title: formData.title.trim(),
+      slug: formData.slug.trim() || generateSlug(formData.title),
+      description: formData.description.trim() || null,
+      base_price: Number(formData.base_price),
+      brand: formData.brand.trim() || null,
+      material: formData.material.trim() || null,
+      gender: formData.gender || 'unisex',
+      category_id: formData.category_id || null,
+      image_url: formData.image_url.trim() || null,
+    }
+
+    setSubmitting(true)
+    const toastId = toast.loading('Đang cập nhật sản phẩm...')
+    try {
+      const res = await productApi.update(editingProduct.id, payload)
+      const updatedProduct = res.data || res
+      toast.success('Cập nhật sản phẩm thành công!', { id: toastId })
+      // Cập nhật trực tiếp sản phẩm trong mảng
+      setProducts((prev) =>
+        prev.map((p) => (p.id === editingProduct.id ? { ...p, ...updatedProduct } : p))
+      )
+      setFormData(initialFormState)
+      setAutoSlug(true)
+      setEditingProduct(null)
+      setShowAddForm(false)
+    } catch (error) {
+      console.error('Lỗi khi cập nhật sản phẩm:', error)
+      const detail = error.response?.data?.detail
+      let errorMsg = 'Không thể cập nhật sản phẩm'
+      if (typeof detail === 'string') errorMsg = detail
+      else if (Array.isArray(detail)) errorMsg = detail.map((d) => d.msg).join(', ')
+      toast.error(errorMsg, { id: toastId })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const cancelEditing = () => {
+    setEditingProduct(null)
+    setFormData(initialFormState)
+    setAutoSlug(true)
+    setShowAddForm(false)
+  }
+
+  // ==================== DELETE ====================
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+
+    setDeleting(true)
+    const toastId = toast.loading('Đang xóa sản phẩm...')
+    try {
+      await productApi.delete(deleteTarget.id)
+      toast.success(`Đã xóa sản phẩm "${deleteTarget.title}"`, { id: toastId })
+      // Loại bỏ sản phẩm khỏi mảng ngay lập tức
+      setProducts((prev) => prev.filter((p) => p.id !== deleteTarget.id))
+      setTotal((prev) => prev - 1)
+      setDeleteTarget(null)
+    } catch (error) {
+      console.error('Lỗi khi xóa sản phẩm:', error)
+      toast.error(
+        error.response?.data?.detail || 'Không thể xóa sản phẩm này.',
+        { id: toastId }
+      )
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -246,6 +355,13 @@ const AdminProducts = () => {
   }
 
   const totalPages = Math.ceil(total / pageSize) || 1
+
+  // Determine if we are in create or edit mode
+  const isEditing = !!editingProduct
+  const formTitle = isEditing ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'
+  const formSubtitle = isEditing
+    ? `Đang sửa: ${editingProduct.title}`
+    : 'Điền đầy đủ thông tin chi tiết và tải ảnh minh họa cho sản phẩm.'
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -265,14 +381,16 @@ const AdminProducts = () => {
 
           <button
             onClick={() => {
-              setShowAddForm(!showAddForm)
-              if (!showAddForm) {
+              if (showAddForm) {
+                cancelEditing()
+              } else {
+                setEditingProduct(null)
+                setFormData(initialFormState)
+                setAutoSlug(true)
+                setShowAddForm(true)
                 setTimeout(() => {
-                  if (formContainerRef.current) {
-                    const y = formContainerRef.current.getBoundingClientRect().top + window.scrollY - 80;
-                    window.scrollTo({ top: y, behavior: 'smooth' });
-                  }
-                }, 100)
+                  saveBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }, 150)
               }
             }}
             className="btn-primary inline-flex items-center gap-2 text-xs py-2.5 px-5 shrink-0"
@@ -368,6 +486,7 @@ const AdminProducts = () => {
                       <th className="px-6 py-3.5 font-medium">Danh mục</th>
                       <th className="px-6 py-3.5 font-medium">Giới tính</th>
                       <th className="px-6 py-3.5 font-medium">Trạng thái</th>
+                      <th className="px-6 py-3.5 font-medium text-right">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -411,6 +530,24 @@ const AdminProducts = () => {
                           </td>
                           <td className="px-6 py-3.5">
                             <Badge status={product.is_active ? 'active' : 'inactive'} />
+                          </td>
+                          <td className="px-6 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-3">
+                              <button
+                                onClick={() => startEditing(product)}
+                                className="text-gray-500 hover:text-gray-900 transition-colors p-1"
+                                title="Sửa sản phẩm"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => setDeleteTarget(product)}
+                                className="text-gray-400 hover:text-rose-600 transition-colors p-1"
+                                title="Xóa sản phẩm"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       )
@@ -460,27 +597,27 @@ const AdminProducts = () => {
             )}
           </div>
 
-          {/* Form Thêm Sản Phẩm (Toggle State bên dưới bảng) */}
+          {/* ==================== FORM Thêm / Sửa Sản Phẩm ==================== */}
           {showAddForm && (
-            <div ref={formContainerRef} className="bg-white border border-gray-900 p-8 shadow-sm transition-all animate-fadeIn">
+            <div className={`bg-white border p-8 shadow-sm transition-all animate-fadeIn ${isEditing ? 'border-amber-400' : 'border-gray-900'}`}>
               <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
                 <div>
                   <h2 className="font-display text-xl font-semibold text-gray-900">
-                    Thêm sản phẩm mới
+                    {formTitle}
                   </h2>
                   <p className="text-xs text-gray-500 mt-1">
-                    Điền đầy đủ thông tin chi tiết và tải ảnh minh họa cho sản phẩm.
+                    {formSubtitle}
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowAddForm(false)}
+                  onClick={cancelEditing}
                   className="p-2 text-gray-400 hover:text-gray-900 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={isEditing ? handleEditSubmit : handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Title */}
                   <div>
@@ -674,24 +811,76 @@ const AdminProducts = () => {
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
                   <button
                     type="button"
-                    onClick={() => setShowAddForm(false)}
+                    onClick={cancelEditing}
                     className="btn-outline text-xs py-3 px-6"
                   >
                     Hủy bỏ
                   </button>
                   <button
+                    ref={saveBtnRef}
                     type="submit"
                     disabled={submitting}
-                    className="btn-primary text-xs py-3 px-8 inline-flex items-center gap-2 disabled:opacity-50"
+                    className={`text-xs py-3 px-8 inline-flex items-center gap-2 disabled:opacity-50 ${
+                      isEditing
+                        ? 'bg-amber-600 text-white hover:bg-amber-700 border border-amber-600 font-semibold uppercase tracking-wider transition-colors'
+                        : 'btn-primary'
+                    }`}
                   >
                     <Check className="w-4 h-4" />
-                    <span>{submitting ? 'Đang tạo...' : 'Lưu sản phẩm'}</span>
+                    <span>
+                      {submitting
+                        ? (isEditing ? 'Đang cập nhật...' : 'Đang tạo...')
+                        : (isEditing ? 'Cập nhật sản phẩm' : 'Lưu sản phẩm')
+                      }
+                    </span>
                   </button>
                 </div>
               </form>
             </div>
           )}
         </div>
+
+        {/* ==================== MODAL XÁC NHẬN XÓA ==================== */}
+        {deleteTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fadeIn">
+            <div className="bg-white max-w-md w-full p-6 border border-gray-900 space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-rose-50 text-rose-600">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-semibold text-gray-900">
+                    Xác nhận xóa sản phẩm
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                    Bạn có chắc chắn muốn xóa sản phẩm{' '}
+                    <strong className="text-gray-900 font-semibold">
+                      "{deleteTarget.title}"
+                    </strong>
+                    ? Thao tác này sẽ ẩn sản phẩm khỏi danh sách.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  disabled={deleting}
+                  className="btn-outline text-xs py-2.5 px-4"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={deleting}
+                  className="px-5 py-2.5 bg-rose-600 text-white text-xs uppercase tracking-wider font-semibold hover:bg-rose-700 transition-colors disabled:opacity-50"
+                >
+                  {deleting ? 'Đang xóa...' : 'Xác nhận xóa'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )
