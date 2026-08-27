@@ -1,0 +1,9 @@
+PgAdmin 4 (SQL)
+postgres
+postgres
+
+SQL
+admin@admin.com
+admin
+
+
