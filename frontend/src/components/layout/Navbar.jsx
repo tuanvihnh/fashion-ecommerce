@@ -113,9 +113,13 @@ const Navbar = () => {
           <div className="flex-shrink-0 flex items-center">
             <Link
               to="/"
-              className="font-display font-bold text-2xl sm:text-3xl tracking-[0.25em] text-gray-950 uppercase hover:opacity-80 transition-opacity"
+              className="hover:opacity-80 transition-opacity flex items-center"
             >
-              LUXE
+              <img
+                src="/logos/logo-nav.png"
+                alt="NYXOS"
+                className="h-10 sm:h-12 w-auto object-contain"
+              />
             </Link>
           </div>
 
@@ -227,7 +231,7 @@ const Navbar = () => {
                     /* Guest links */
                     <div className="py-2 px-1">
                       <div className="px-3 py-2 mb-1 border-b border-gray-100">
-                        <p className="text-xs text-gray-500">Tài khoản LUXE</p>
+                        <p className="text-xs text-gray-500">Tài khoản NYXOS</p>
                         <p className="text-xs text-gray-700 mt-0.5">
                           Đăng nhập để xem đơn hàng và nhận ưu đãi riêng
                         </p>

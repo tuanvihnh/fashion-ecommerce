@@ -16,7 +16,7 @@ const Footer = () => {
 
     setIsSubmitting(true)
     setTimeout(() => {
-      toast.success('Cảm ơn bạn đã đăng ký nhận bản tin LUXE!')
+      toast.success('Cảm ơn bạn đã đăng ký nhận bản tin NYXOS!')
       setEmail('')
       setIsSubmitting(false)
     }, 600)
@@ -27,11 +27,15 @@ const Footer = () => {
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
-          {/* Cột 1: Về LUXE */}
+          {/* Cột 1: Về NYXOS */}
           <div className="space-y-4">
-            <h3 className="font-display text-2xl font-bold tracking-[0.25em] uppercase text-white">
-              LUXE
-            </h3>
+            <Link to="/">
+              <img
+                src="/logos/logo-footer.jpg"
+                alt="NYXOS"
+                className="h-20 w-auto object-contain rounded"
+              />
+            </Link>
             <p className="text-gray-400 text-sm leading-relaxed font-light">
               Thương hiệu thời trang cao cấp với phong cách tối giản chuẩn mực. Từng đường may
               và chất liệu được tuyển chọn kỹ lưỡng, mang đến sự tinh tế vượt thời gian cho phong cách của bạn.
@@ -115,7 +119,7 @@ const Footer = () => {
               Theo dõi chúng tôi
             </h4>
             <p className="text-gray-400 text-sm mb-4 leading-relaxed font-light">
-              Khám phá những chiến dịch thời trang mới nhất và hậu trường sáng tạo cùng LUXE.
+              Khám phá những chiến dịch thời trang mới nhất và hậu trường sáng tạo cùng NYXOS.
             </p>
             <div className="space-y-3">
               <a
@@ -182,7 +186,7 @@ const Footer = () => {
               </button>
             </form>
             <p className="text-[11px] text-gray-500 mt-3">
-              Bằng việc đăng ký, bạn đồng ý với Điều khoản dịch vụ & Chính sách bảo mật của LUXE.
+              Bằng việc đăng ký, bạn đồng ý với Điều khoản dịch vụ & Chính sách bảo mật của NYXOS.
             </p>
           </div>
         </div>
@@ -190,7 +194,7 @@ const Footer = () => {
         {/* Bottom copyright line */}
         <div className="mt-16 pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
           <p>
-            © {new Date().getFullYear()} LUXE. All rights reserved. Thiết kế thời trang tối giản & cao cấp.
+            © {new Date().getFullYear()} NYXOS. All rights reserved. Thiết kế thời trang tối giản & cao cấp.
           </p>
           <div className="flex items-center space-x-6 text-gray-400 text-xs">
             <span className="hover:text-white transition-colors cursor-pointer">Điều khoản</span>

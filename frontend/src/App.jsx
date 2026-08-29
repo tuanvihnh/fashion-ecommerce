@@ -12,6 +12,7 @@ import AdminProducts from './pages/admin/AdminProducts'
 import AdminCategories from './pages/admin/AdminCategories'
 import AdminOrders from './pages/admin/AdminOrders'
 import ProtectedRoute from './components/ProtectedRoute'
+import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
   return (
@@ -45,6 +46,9 @@ function App() {
       <Route path="/admin/orders" element={
         <ProtectedRoute requireAdmin><AdminOrders /></ProtectedRoute>
       } />
+
+      {/* 404 Catch-all */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }

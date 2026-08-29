@@ -53,12 +53,14 @@ const AdminSidebar = () => {
       <div>
         <div className="p-6 border-b border-gray-800">
           <Link to="/admin" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded bg-[#a87040]/20 flex items-center justify-center border border-[#a87040]/40 group-hover:bg-[#a87040]/30 transition-colors">
-              <ShieldCheck className="w-5 h-5 text-[#a87040]" />
-            </div>
+            <img
+              src="/logos/logo-icon.png"
+              alt="NYXOS"
+              className="w-9 h-9 rounded object-contain border border-[#a87040]/40"
+            />
             <div>
               <span className="font-display font-bold text-lg tracking-[0.2em] uppercase text-white block leading-tight">
-                LUXE
+                NYXOS
               </span>
               <span className="text-[10px] uppercase tracking-widest text-[#a87040] font-semibold">
                 ADMIN PANEL
